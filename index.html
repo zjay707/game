@@ -1,0 +1,1411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assassin - Social Deduction Game</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        .crosshair-logo {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto;
+            display: block;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #2c3e50 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            color: #fff;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
+            padding: 40px;
+            max-width: 480px;
+            width: 100%;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #fff;
+            margin-bottom: 8px;
+            font-size: 2.5em;
+            font-weight: 800;
+            letter-spacing: -1px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 32px;
+            font-size: 15px;
+            font-weight: 500;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 12px;
+            transition: all 0.3s;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #ff4757 0%, #ff6348 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(255, 71, 87, 0.4);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 71, 87, 0.6);
+        }
+        
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #ff4757 0%, #ff6348 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(255, 71, 87, 0.4);
+        }
+        
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 71, 87, 0.6);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+            color: white;
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        
+        input {
+            width: 100%;
+            padding: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            font-size: 16px;
+            margin-bottom: 12px;
+            transition: all 0.3s;
+            color: white;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        input::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #ff6348;
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 0 0 3px rgba(255, 99, 72, 0.1);
+        }
+        
+        .game-code {
+            text-align: center;
+            font-size: 3.5em;
+            font-weight: 800;
+            color: #ff6348;
+            letter-spacing: 12px;
+            margin: 24px 0;
+            padding: 24px;
+            background: rgba(255, 99, 72, 0.1);
+            border-radius: 16px;
+            border: 2px solid rgba(255, 99, 72, 0.3);
+        }
+        
+        .player-list {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .player-list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        
+        .player-list-title {
+            font-weight: 600;
+            font-size: 16px;
+        }
+        
+        .player-count {
+            background: rgba(255, 99, 72, 0.2);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #ff6348;
+        }
+        
+        .player-item {
+            background: rgba(255, 255, 255, 0.08);
+            padding: 14px 16px;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            font-weight: 500;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .player-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .mission-box {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 32px;
+            border-radius: 20px;
+            margin-bottom: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .mission-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 24px;
+            text-align: center;
+            letter-spacing: 1px;
+        }
+        
+        .mission-card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+        
+        .mission-label {
+            font-size: 13px;
+            opacity: 0.7;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+        
+        .target {
+            font-size: 2em;
+            font-weight: 800;
+            text-align: center;
+        }
+        
+        .word {
+            font-size: 2.8em;
+            font-weight: 800;
+            text-align: center;
+            color: #ff4757;
+            text-shadow: 0 2px 10px rgba(255, 71, 87, 0.3);
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .stat-box {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 24px;
+            border-radius: 16px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .stat-value {
+            font-size: 2.5em;
+            font-weight: 800;
+            color: #ff6348;
+            line-height: 1;
+            margin-bottom: 8px;
+        }
+        
+        .stat-label {
+            color: rgba(255, 255, 255, 0.6);
+            margin-top: 8px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .divider {
+            text-align: center;
+            margin: 24px 0;
+            color: rgba(255, 255, 255, 0.4);
+            position: relative;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .divider:before, .divider:after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 35%;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .divider:before {
+            left: 0;
+        }
+        
+        .divider:after {
+            right: 0;
+        }
+        
+        .icon {
+            font-size: 4em;
+            text-align: center;
+            margin-bottom: 16px;
+        }
+        
+        .tip {
+            background: rgba(255, 193, 7, 0.1);
+            border: 1px solid rgba(255, 193, 7, 0.3);
+            padding: 16px 20px;
+            border-radius: 12px;
+            margin-top: 24px;
+            font-size: 14px;
+            line-height: 1.6;
+            color: rgba(255, 255, 255, 0.8);
+        }
+        
+        .tip strong {
+            color: #ffd700;
+        }
+        
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(34, 197, 94, 0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 14px;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: #22c55e;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+        
+        .info-box {
+            background: rgba(30, 144, 255, 0.1);
+            border: 1px solid rgba(30, 144, 255, 0.3);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.8);
+        }
+        
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+            animation: fadeIn 0.3s;
+        }
+        
+        .modal.active {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-content {
+            background: rgba(26, 10, 10, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 36px;
+            border-radius: 24px;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 99, 72, 0.2);
+            animation: modalSlideUp 0.3s;
+        }
+        
+        .modal-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .modal-input {
+            margin-bottom: 16px;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(0); opacity: 1; }
+            to { transform: translateY(-30px); opacity: 0; }
+        }
+        
+        @keyframes slideDown {
+            from { transform: translateX(-50%) translateY(-30px); opacity: 0; }
+            to { transform: translateX(-50%) translateY(0); opacity: 1; }
+        }
+        
+        @keyframes modalSlideUp {
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        .eliminated-screen {
+            background: linear-gradient(135deg, rgba(235, 51, 73, 0.2) 0%, rgba(244, 92, 67, 0.2) 100%);
+            border: 1px solid rgba(235, 51, 73, 0.3);
+        }
+        
+        .winner-screen {
+            background: linear-gradient(135deg, rgba(255, 71, 87, 0.2) 0%, rgba(255, 99, 72, 0.2) 100%);
+            border: 1px solid rgba(255, 71, 87, 0.3);
+        }
+        
+        .player-detail {
+            background: rgba(255, 255, 255, 0.08);
+            padding: 16px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .player-name {
+            font-weight: 700;
+            font-size: 18px;
+            margin-bottom: 12px;
+            color: #ff6348;
+        }
+        
+        .player-info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        
+        .info-item {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 10px;
+            border-radius: 8px;
+        }
+        
+        .info-label {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.5);
+            margin-bottom: 4px;
+        }
+        
+        .info-value {
+            font-weight: 600;
+            font-size: 16px;
+        }
+        
+        .code-display {
+            background: rgba(255, 99, 72, 0.15);
+            padding: 12px 20px;
+            border-radius: 10px;
+            display: inline-block;
+            font-weight: 700;
+            letter-spacing: 3px;
+            border: 1px solid rgba(255, 99, 72, 0.3);
+            margin-top: 8px;
+        }
+
+        .firebase-notice {
+            background: rgba(255, 193, 7, 0.1);
+            border: 1px solid rgba(255, 193, 7, 0.3);
+            padding: 16px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            text-align: center;
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="app"></div>
+    </div>
+
+    <!-- Modals -->
+    <div id="createModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-title">
+                <svg style="width: 32px; height: 32px; display: inline-block; vertical-align: middle; margin-right: 8px;" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="50" cy="50" r="35" fill="none" stroke="#ff6348" stroke-width="8"/>
+                    <rect x="46" y="5" width="8" height="18" fill="#ff6348" rx="4"/>
+                    <rect x="77" y="46" width="18" height="8" fill="#ff6348" rx="4"/>
+                    <rect x="46" y="77" width="8" height="18" fill="#ff6348" rx="4"/>
+                    <rect x="5" y="46" width="18" height="8" fill="#ff6348" rx="4"/>
+                    <circle cx="50" cy="50" r="8" fill="#ff6348"/>
+                </svg>
+                Create Game
+            </div>
+            <label style="display: block; margin-bottom: 8px; font-size: 14px; font-weight: 600; opacity: 0.8;">Your Name</label>
+            <input type="text" id="createName" placeholder="Enter your name" class="modal-input" style="text-align: center;">
+            <label style="display: block; margin-bottom: 8px; font-size: 14px; font-weight: 600; opacity: 0.8;">4-Digit PIN</label>
+            <input type="text" id="createPin" placeholder="Enter 4-digit PIN" maxlength="4" 
+                style="text-align: center; letter-spacing: 3px;" class="modal-input">
+            <button class="btn btn-primary" onclick="confirmCreate()">Create Game</button>
+            <button class="btn btn-secondary" onclick="closeModal('createModal')">Cancel</button>
+        </div>
+    </div>
+
+    <div id="rejoinModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-title">🔄 Rejoin Game</div>
+            <label style="display: block; margin-bottom: 8px; font-size: 14px; font-weight: 600; opacity: 0.8;">Game Code</label>
+            <input type="text" id="rejoinCode" placeholder="Enter game code" maxlength="4" 
+                style="text-align: center; letter-spacing: 3px;" class="modal-input">
+            <label style="display: block; margin-bottom: 8px; font-size: 14px; font-weight: 600; opacity: 0.8;">Your Name</label>
+            <input type="text" id="rejoinName" placeholder="Enter your name" class="modal-input" style="text-align: center;">
+            <label style="display: block; margin-bottom: 8px; font-size: 14px; font-weight: 600; opacity: 0.8;">4-Digit PIN</label>
+            <input type="text" id="rejoinPin" placeholder="Enter 4-digit PIN" maxlength="4" 
+                style="text-align: center; letter-spacing: 3px;" class="modal-input">
+            <button class="btn btn-primary" onclick="confirmRejoin()">Rejoin</button>
+            <button class="btn btn-secondary" onclick="closeModal('rejoinModal')">Cancel</button>
+        </div>
+    </div>
+
+    <div id="eliminationModal" class="modal">
+        <div class="modal-content">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <svg style="width: 60px; height: 60px; display: block; margin: 0 auto 16px;" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="50" cy="50" r="35" fill="none" stroke="#ff4757" stroke-width="8"/>
+                    <rect x="46" y="5" width="8" height="18" fill="#ff4757" rx="4"/>
+                    <rect x="77" y="46" width="18" height="8" fill="#ff4757" rx="4"/>
+                    <rect x="46" y="77" width="8" height="18" fill="#ff4757" rx="4"/>
+                    <rect x="5" y="46" width="18" height="8" fill="#ff4757" rx="4"/>
+                    <circle cx="50" cy="50" r="8" fill="#ff4757"/>
+                </svg>
+            </div>
+            <div class="modal-title">You've Been Targeted!</div>
+            <p style="margin-bottom: 24px; text-align: center; opacity: 0.8; line-height: 1.6;">
+                Someone claims you said their target word.<br>
+                If you remember saying it, type it below to confirm your elimination.
+            </p>
+            <label style="display: block; margin-bottom: 8px; font-size: 14px; font-weight: 600; opacity: 0.8;">Type the word you said:</label>
+            <input type="text" id="confirmWord" placeholder="Enter the word..." 
+                style="text-align: center; font-size: 18px;" class="modal-input">
+            <button class="btn btn-danger" onclick="confirmElimination()">Confirm - I Said It</button>
+            <button class="btn btn-secondary" onclick="denyElimination()">Deny - I Didn't Say It</button>
+        </div>
+    </div>
+
+    <script>
+        // ======================
+        // FIREBASE CONFIGURATION
+        // ======================
+        
+        // ⚠️ IMPORTANT: Replace this with YOUR Firebase config
+        // Get it from: Firebase Console > Project Settings > Your apps > Web app
+        const firebaseConfig = {
+               apiKey: "AIzaSyAODpo5-Bg40oYE9RNkfrlNan03U_CAWok",
+    authDomain: "assassin-game-b4f4e.firebaseapp.com",
+    databaseURL: "https://assassin-game-b4f4e-default-rtdb.firebaseio.com",
+    projectId: "assassin-game-b4f4e",
+    storageBucket: "assassin-game-b4f4e.firebasestorage.app",
+    messagingSenderId: "946723749214",
+    appId: "1:946723749214:web:858182d9f404f79c4963cf"
+        };
+
+        // Initialize Firebase
+        let database;
+        let isFirebaseConfigured = false;
+
+        try {
+            if (firebaseConfig.apiKey !== "YOUR_API_KEY_HERE") {
+                firebase.initializeApp(firebaseConfig);
+                database = firebase.database();
+                isFirebaseConfigured = true;
+                console.log("✅ Firebase initialized successfully!");
+            } else {
+                console.warn("⚠️ Firebase not configured. Please add your config.");
+            }
+        } catch (error) {
+            console.error("Firebase initialization error:", error);
+        }
+
+        // ======================
+        // GAME STATE
+        // ======================
+        
+        let state = {
+            screen: 'home',
+            gameCode: '',
+            playerName: '',
+            myData: null,
+            isHost: false
+        };
+
+        const words = [
+            "Banana", "Unicorn", "Dragon", "Ninja", "Pirate", "Wizard", "Robot",
+            "Dinosaur", "Volcano", "Thunder", "Rainbow", "Sunset", "Ocean", "Mountain",
+            "Castle", "Kingdom", "Treasure", "Legend", "Mystery", "Adventure",
+            "Midnight", "Shadow", "Eclipse", "Crystal", "Diamond", "Phoenix",
+            "Galaxy", "Planet", "Comet", "Rocket", "Satellite", "Telescope",
+            "Tornado", "Hurricane", "Blizzard", "Earthquake", "Avalanche", "Lightning",
+            "Penguin", "Dolphin", "Elephant", "Giraffe", "Kangaroo", "Octopus",
+            "Butterfly", "Dragonfly", "Jellyfish", "Flamingo", "Peacock", "Toucan",
+            "Pyramid", "Sphinx", "Temple", "Monument", "Cathedral", "Fortress",
+            "Compass", "Anchor", "Lighthouse", "Submarine", "Parachute", "Helicopter",
+            "Guitar", "Piano", "Violin", "Trumpet", "Saxophone", "Harmonica",
+            "Carnival", "Festival", "Parade", "Concert", "Symphony", "Theater",
+            "Puzzle", "Riddle", "Clue", "Secret", "Mystery", "Mission",
+            "Victory", "Champion", "Trophy", "Medal", "Prize", "Award",
+            "Jungle", "Desert", "Tundra", "Savanna", "Meadow", "Valley",
+            "Glacier", "Iceberg", "Canyon", "Cavern", "Waterfall", "Rapids",
+            "Emerald", "Ruby", "Sapphire", "Pearl", "Amber", "Jade",
+            "Potion", "Spell", "Magic", "Wand", "Cauldron", "Enchantment",
+            "Knight", "Archer", "Warrior", "Guardian", "Sentinel", "Hero",
+            "Quest", "Journey", "Voyage", "Expedition", "Odyssey", "Trek",
+            "Crown", "Scepter", "Throne", "Palace", "Manor", "Estate",
+            "Labyrinth", "Maze", "Dungeon", "Chamber", "Vault", "Arsenal",
+            "Anthem", "Melody", "Harmony", "Rhythm", "Tempo", "Chorus",
+            "Marble", "Granite", "Bronze", "Silver", "Platinum", "Copper",
+            "Falcon", "Eagle", "Hawk", "Raven", "Owl", "Parrot",
+            "Mirage", "Oasis", "Dune", "Mesa", "Plateau", "Summit",
+            "Colossal", "Gigantic", "Miniature", "Enormous", "Ancient", "Modern",
+            
+            // Famous Locations
+            "Paris", "London", "Tokyo", "Egypt", "Italy", "Greece", "Brazil",
+            "Australia", "Canada", "Mexico", "Spain", "China", "India", "Russia",
+            "Hawaii", "Alaska", "Texas", "California", "Florida", "Vegas",
+            "Disney", "Hollywood", "Broadway", "Amazon", "Sahara", "Everest",
+            "Niagara", "Manhattan", "Venice", "Rome", "Athens", "Beijing",
+            
+            // Very Famous People
+            "Einstein", "Shakespeare", "Mozart", "Picasso", "Tesla", "Lincoln",
+            "Washington", "Napoleon", "Cleopatra", "Caesar", "Columbus", "Edison",
+            "DaVinci", "Beethoven", "Newton", "Darwin", "Galileo", "Michelangelo",
+            
+            // Household Items
+            "Toaster", "Blender", "Microwave", "Refrigerator", "Oven", "Dishwasher",
+            "Vacuum", "Pillow", "Blanket", "Curtain", "Mirror", "Lamp",
+            "Couch", "Recliner", "Bookshelf", "Dresser", "Nightstand", "Cabinet",
+            "Scissors", "Stapler", "Notebook", "Calendar", "Clock", "Remote",
+            "Kettle", "Spatula", "Whisk", "Grater", "Colander", "Thermostat",
+            "Doorbell", "Mailbox", "Garage", "Attic", "Basement", "Porch",
+            "Chandelier", "Candle", "Vase", "Picture", "Painting", "Rug",
+            "Shower", "Bathtub", "Sink", "Faucet", "Towel", "Soap",
+            "Shampoo", "Toothbrush", "Hairdryer", "Iron", "Hanger", "Laundry"
+        ];
+
+        function $(id) {
+            return document.getElementById(id);
+        }
+
+        function showAlert(message) {
+            const alertBox = document.createElement('div');
+            alertBox.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: rgba(26, 10, 10, 0.98);
+                backdrop-filter: blur(10px);
+                padding: 32px;
+                border-radius: 20px;
+                border: 1px solid rgba(255, 71, 87, 0.3);
+                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+                z-index: 10001;
+                color: white;
+                text-align: center;
+                max-width: 400px;
+                width: 90%;
+                animation: modalSlideUp 0.3s;
+            `;
+            alertBox.innerHTML = `
+                <div style="font-size: 18px; font-weight: 600; margin-bottom: 20px; line-height: 1.5;">
+                    ${message}
+                </div>
+                <button onclick="this.parentElement.remove()" style="
+                    background: linear-gradient(135deg, #ff4757 0%, #ff6348 100%);
+                    color: white;
+                    border: none;
+                    padding: 12px 32px;
+                    border-radius: 10px;
+                    font-size: 16px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    font-family: 'Inter', sans-serif;
+                ">OK</button>
+            `;
+            document.body.appendChild(alertBox);
+        }
+
+        function randomCode() {
+            return Math.floor(1000 + Math.random() * 9000).toString();
+        }
+
+        function shuffle(array) {
+            const arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        // ======================
+        // FIREBASE DATABASE FUNCTIONS
+        // ======================
+
+        function getGame(code, callback) {
+            if (!isFirebaseConfigured) {
+                showAlert("Firebase is not configured. Please add your Firebase config to the code.");
+                return;
+            }
+            
+            database.ref('games/' + code).once('value', (snapshot) => {
+                callback(snapshot.val());
+            });
+        }
+
+        function saveGame(code, data) {
+            if (!isFirebaseConfigured) {
+                showAlert("Firebase is not configured. Please add your Firebase config to the code.");
+                return;
+            }
+            
+            database.ref('games/' + code).set(data);
+        }
+
+        function watchGame(code, callback) {
+            if (!isFirebaseConfigured) return;
+            
+            database.ref('games/' + code).on('value', (snapshot) => {
+                callback(snapshot.val());
+            });
+        }
+
+        function unwatchGame(code) {
+            if (!isFirebaseConfigured) return;
+            
+            database.ref('games/' + code).off();
+        }
+
+        function openModal(id) {
+            $(id).classList.add('active');
+        }
+
+        function closeModal(id) {
+            $(id).classList.remove('active');
+        }
+
+        // ======================
+        // SCREENS
+        // ======================
+        
+        function showHome() {
+            const configWarning = !isFirebaseConfigured ? `
+                <div class="firebase-notice">
+                    ⚠️ <strong>Firebase Not Configured</strong><br>
+                    Please add your Firebase config to enable multiplayer.
+                </div>
+            ` : '';
+
+            $('app').innerHTML = `
+                ${configWarning}
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <svg class="crosshair-logo" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="50" cy="50" r="35" fill="none" stroke="#ff6348" stroke-width="8"/>
+                        <rect x="46" y="5" width="8" height="18" fill="#ff6348" rx="4"/>
+                        <rect x="77" y="46" width="18" height="8" fill="#ff6348" rx="4"/>
+                        <rect x="46" y="77" width="8" height="18" fill="#ff6348" rx="4"/>
+                        <rect x="5" y="46" width="18" height="8" fill="#ff6348" rx="4"/>
+                        <circle cx="50" cy="50" r="8" fill="#ff6348"/>
+                    </svg>
+                </div>
+                <h1>Assassin</h1>
+                <p class="subtitle">The Game Where Words Can Kill</p>
+                
+                <button class="btn btn-primary" onclick="openModal('createModal')">Create New Game</button>
+                <button class="btn btn-secondary" onclick="openModal('rejoinModal')">Rejoin Game</button>
+                
+                <div class="divider">OR</div>
+                
+                <input type="text" id="joinCode" placeholder="Game Code" maxlength="4" 
+                    style="text-align: center; letter-spacing: 3px;">
+                <input type="text" id="joinName" placeholder="Your Name" style="text-align: center;">
+                <input type="text" id="joinPin" placeholder="4-Digit PIN" maxlength="4" 
+                    style="text-align: center; letter-spacing: 3px;">
+                <button class="btn btn-success" onclick="joinGame()">Join Game</button>
+                
+                <div class="tip">
+                    <strong>How to play:</strong> Get your target to say your secret word. Last player standing wins!
+                </div>
+            `;
+        }
+
+        function showLobby(game) {
+            const playerList = game.players.map(p => 
+                `<div class="player-item">${p.name}</div>`
+            ).join('');
+
+            $('app').innerHTML = `
+                <h1>Game Lobby</h1>
+                <div class="game-code">${state.gameCode}</div>
+                <p class="subtitle">Share this code with players</p>
+                
+                <div class="player-list">
+                    <div class="player-list-header">
+                        <div class="player-list-title">Players</div>
+                        <div class="player-count">${game.players.length}</div>
+                    </div>
+                    ${playerList}
+                </div>
+                
+                ${state.isHost ? `
+                    <button class="btn btn-success" onclick="startGame()" 
+                        ${game.players.length < 3 ? 'disabled' : ''}>
+                        Start Game ${game.players.length < 3 ? '(Need 3+ players)' : ''}
+                    </button>
+                    <button class="btn btn-secondary" onclick="cancelGame()">Cancel</button>
+                ` : `
+                    <div class="info-box">
+                        Waiting for host to start the game...
+                    </div>
+                `}
+            `;
+        }
+
+        function showPlaying(game) {
+            const me = game.players.find(p => p.name === state.playerName);
+            const alive = game.players.filter(p => !p.dead).length;
+
+            $('app').innerHTML = `
+                <h1>${state.playerName}</h1>
+                ${state.isHost ? `<div style="text-align: center;"><span class="code-display">CODE: ${state.gameCode}</span></div>` : ''}
+                <div style="text-align: center; margin: 16px 0;">
+                    <span class="status-badge">
+                        <span class="status-dot"></span>
+                        ACTIVE
+                    </span>
+                </div>
+                
+                <div class="mission-box">
+                    <div class="mission-title">YOUR MISSION</div>
+                    <div class="mission-card">
+                        <div class="mission-label">Target</div>
+                        <div class="target">${me.target}</div>
+                    </div>
+                    <div class="mission-card" style="margin-bottom: 0;">
+                        <div class="mission-label">Get them to say</div>
+                        <div class="word">${me.word}</div>
+                    </div>
+                </div>
+                
+                <button class="btn btn-success" onclick="openEliminationModal()">
+                    ✓ They Said It!
+                </button>
+                
+                <div class="stats">
+                    <div class="stat-box">
+                        <div class="stat-value">${alive}</div>
+                        <div class="stat-label">Players Left</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value">${game.kills || 0}</div>
+                        <div class="stat-label">Eliminations</div>
+                    </div>
+                </div>
+                
+                <div class="tip">
+                    💡 <strong>Pro tip:</strong> Work the word naturally into conversation. Be subtle!
+                </div>
+            `;
+        }
+
+        function showDead() {
+            getGame(state.gameCode, (game) => {
+                if (!game) return;
+                
+                const alivePlayers = game.players.filter(p => !p.dead);
+                
+                const playerList = alivePlayers.map(p => `
+                    <div class="player-detail">
+                        <div class="player-name">${p.name}</div>
+                        <div class="player-info-grid">
+                            <div class="info-item">
+                                <div class="info-label">Target</div>
+                                <div class="info-value" style="color: #eb3349;">${p.target}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Word</div>
+                                <div class="info-value" style="color: #ff4757;">${p.word}</div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+
+                $('app').innerHTML = `
+                    <div class="icon">💀</div>
+                    <h1>Eliminated</h1>
+                    ${state.isHost ? `<div style="text-align: center;"><span class="code-display">CODE: ${state.gameCode}</span></div>` : ''}
+                    <p class="subtitle">You've been caught</p>
+                    
+                    <div class="eliminated-screen" style="padding: 24px; border-radius: 16px; margin: 24px 0; text-align: center;">
+                        <p style="font-size: 16px; opacity: 0.9;">
+                            You said the word and got eliminated!
+                        </p>
+                    </div>
+                    
+                    <div style="margin: 24px 0;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                            <h2 style="font-size: 20px; font-weight: 700;">Active Players</h2>
+                            <div class="player-count">${alivePlayers.length}</div>
+                        </div>
+                        ${playerList}
+                    </div>
+                    
+                    <p style="text-align: center; color: rgba(255,255,255,0.5); font-size: 14px;">
+                        👁️ You can now see everyone's missions
+                    </p>
+                `;
+            });
+        }
+
+        function showWinner() {
+            getGame(state.gameCode, (game) => {
+                if (!game) return;
+                
+                const winnerName = game.winner || state.playerName;
+                const isMe = winnerName === state.playerName;
+                
+                const crosshairSVG = `
+                    <svg style="width: 80px; height: 80px; display: block; margin: 0 auto;" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="50" cy="50" r="35" fill="none" stroke="#ff6348" stroke-width="8"/>
+                        <rect x="46" y="5" width="8" height="18" fill="#ff6348" rx="4"/>
+                        <rect x="77" y="46" width="18" height="8" fill="#ff6348" rx="4"/>
+                        <rect x="46" y="77" width="8" height="18" fill="#ff6348" rx="4"/>
+                        <rect x="5" y="46" width="18" height="8" fill="#ff6348" rx="4"/>
+                        <circle cx="50" cy="50" r="8" fill="#ff6348"/>
+                    </svg>
+                `;
+                
+                $('app').innerHTML = `
+                    <div class="icon">${isMe ? '👑' : ''}</div>
+                    ${!isMe ? crosshairSVG : ''}
+                    <h1>${isMe ? 'VICTORY!' : 'GAME OVER'}</h1>
+                    <p class="subtitle">${isMe ? 'You are the champion!' : 'Winner Announced'}</p>
+                    
+                    <div class="winner-screen" style="padding: 40px; border-radius: 20px; margin: 24px 0; text-align: center;">
+                        <div style="font-size: 4em; margin-bottom: 16px;">${isMe ? '🏆' : ''}</div>
+                        ${!isMe ? crosshairSVG : ''}
+                        <div style="font-size: 28px; font-weight: 800; color: #ff4757; margin-bottom: 8px; margin-top: ${!isMe ? '16px' : '0'};">
+                            ${winnerName}
+                        </div>
+                        <div style="font-size: 18px; font-weight: 600; opacity: 0.8;">
+                            ${isMe ? 'Last Assassin Standing' : 'Won the Game!'}
+                        </div>
+                    </div>
+                    
+                    <div class="stats">
+                        <div class="stat-box">
+                            <div class="stat-value">${game.players.length}</div>
+                            <div class="stat-label">Total Players</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value">${game.kills || 0}</div>
+                            <div class="stat-label">Eliminations</div>
+                        </div>
+                    </div>
+                    
+                    <button class="btn btn-primary" onclick="playAgain()">
+                        ${isMe ? 'Play Again' : 'Back to Home'}
+                    </button>
+                `;
+            });
+        }
+
+        // ======================
+        // ACTIONS
+        // ======================
+        
+        function confirmCreate() {
+            const name = $('createName').value.trim();
+            const pin = $('createPin').value.trim();
+            
+            if (!name) {
+                showAlert('Please enter your name!');
+                return;
+            }
+            
+            if (!pin || pin.length !== 4 || !/^\d+$/.test(pin)) {
+                showAlert('PIN must be exactly 4 digits!');
+                return;
+            }
+            
+            const code = randomCode();
+            const game = {
+                code: code,
+                host: name,
+                players: [{
+                    name: name,
+                    pin: pin,
+                    target: null,
+                    word: null,
+                    dead: false
+                }],
+                started: false,
+                kills: 0
+            };
+            saveGame(code, game);
+            
+            state.gameCode = code;
+            state.playerName = name;
+            state.isHost = true;
+            state.screen = 'lobby';
+            
+            localStorage.setItem('myLastGame', JSON.stringify({
+                code: code,
+                name: name,
+                pin: pin,
+                isHost: true
+            }));
+            
+            closeModal('createModal');
+            showLobby(game);
+            startWatching();
+        }
+
+        function joinGame() {
+            const code = $('joinCode').value.trim();
+            const name = $('joinName').value.trim();
+            const pin = $('joinPin').value.trim();
+            
+            if (!code || !name || !pin) {
+                showAlert('Please fill in all fields!');
+                return;
+            }
+            
+            if (pin.length !== 4 || !/^\d+$/.test(pin)) {
+                showAlert('PIN must be exactly 4 digits!');
+                return;
+            }
+            
+            getGame(code, (game) => {
+                if (!game) {
+                    showAlert('Game not found!');
+                    return;
+                }
+                
+                const existingPlayer = game.players.find(p => p.name === name);
+                if (existingPlayer) {
+                    if (existingPlayer.pin !== pin) {
+                        showAlert('Incorrect PIN!');
+                        return;
+                    }
+                    
+                    // Rejoin
+                    state.gameCode = code;
+                    state.playerName = name;
+                    state.isHost = (game.host === name);
+                    
+                    localStorage.setItem('myLastGame', JSON.stringify({
+                        code: code,
+                        name: name,
+                        pin: pin,
+                        isHost: state.isHost
+                    }));
+                    
+                    if (!game.started) {
+                        state.screen = 'lobby';
+                        showLobby(game);
+                    } else if (existingPlayer.dead) {
+                        state.screen = 'dead';
+                        showDead();
+                    } else {
+                        const alive = game.players.filter(p => !p.dead);
+                        if (alive.length === 1 && !existingPlayer.dead) {
+                            state.screen = 'winner';
+                            showWinner();
+                        } else {
+                            state.screen = 'playing';
+                            showPlaying(game);
+                        }
+                    }
+                    
+                    startWatching();
+                    return;
+                }
+                
+                if (game.started) {
+                    showAlert('Game already started!');
+                    return;
+                }
+                
+                game.players.push({
+                    name: name,
+                    pin: pin,
+                    target: null,
+                    word: null,
+                    dead: false
+                });
+                saveGame(code, game);
+                
+                state.gameCode = code;
+                state.playerName = name;
+                state.screen = 'lobby';
+                
+                localStorage.setItem('myLastGame', JSON.stringify({
+                    code: code,
+                    name: name,
+                    pin: pin,
+                    isHost: false
+                }));
+                
+                showLobby(game);
+                startWatching();
+            });
+        }
+
+        function confirmRejoin() {
+            const code = $('rejoinCode').value.trim();
+            const name = $('rejoinName').value.trim();
+            const pin = $('rejoinPin').value.trim();
+            
+            if (!code || !name || !pin) {
+                showAlert('Please fill in all fields!');
+                return;
+            }
+            
+            if (pin.length !== 4 || !/^\d+$/.test(pin)) {
+                showAlert('PIN must be exactly 4 digits!');
+                return;
+            }
+            
+            getGame(code, (game) => {
+                if (!game) {
+                    showAlert('Game not found!');
+                    return;
+                }
+                
+                const me = game.players.find(p => p.name === name);
+                if (!me) {
+                    showAlert('Player not found in this game!');
+                    return;
+                }
+                
+                if (me.pin !== pin) {
+                    showAlert('Incorrect PIN!');
+                    return;
+                }
+                
+                state.gameCode = code;
+                state.playerName = name;
+                state.isHost = (game.host === name);
+                
+                localStorage.setItem('myLastGame', JSON.stringify({
+                    code: code,
+                    name: name,
+                    pin: pin,
+                    isHost: state.isHost
+                }));
+                
+                closeModal('rejoinModal');
+                
+                if (!game.started) {
+                    state.screen = 'lobby';
+                    showLobby(game);
+                } else if (me.dead) {
+                    state.screen = 'dead';
+                    showDead();
+                } else {
+                    const alive = game.players.filter(p => !p.dead);
+                    if (alive.length === 1 && !me.dead) {
+                        state.screen = 'winner';
+                        showWinner();
+                    } else {
+                        state.screen = 'playing';
+                        showPlaying(game);
+                    }
+                }
+                
+                startWatching();
+            });
+        }
+
+        function openEliminationModal() {
+            getGame(state.gameCode, (game) => {
+                const me = game.players.find(p => p.name === state.playerName);
+                const target = game.players.find(p => p.name === me.target);
+                
+                if (!target || target.dead) {
+                    showAlert('Target already eliminated!');
+                    return;
+                }
+                
+                // Create pending elimination for target to confirm
+                game.pendingElimination = {
+                    assassin: state.playerName,
+                    target: me.target,
+                    word: me.word
+                };
+                saveGame(state.gameCode, game);
+                
+                // Show styled notification
+                const notification = document.createElement('div');
+                notification.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    background: rgba(26, 10, 10, 0.98);
+                    backdrop-filter: blur(10px);
+                    padding: 20px 32px;
+                    border-radius: 16px;
+                    border: 1px solid rgba(255, 71, 87, 0.3);
+                    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+                    z-index: 10000;
+                    animation: slideDown 0.3s ease-out;
+                    color: white;
+                    text-align: center;
+                    max-width: 90%;
+                `;
+                notification.innerHTML = `
+                    <div style="font-size: 16px; font-weight: 600; margin-bottom: 4px;">🎯 Elimination Request Sent</div>
+                    <div style="font-size: 14px; opacity: 0.8;">Waiting for ${me.target} to confirm...</div>
+                `;
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    notification.style.animation = 'slideUp 0.3s ease-out';
+                    setTimeout(() => notification.remove(), 300);
+                }, 3000);
+            });
+        }
+
+        function confirmElimination() {
+            getGame(state.gameCode, (game) => {
+                const enteredWord = $('confirmWord').value.trim();
+                const pending = game.pendingElimination;
+                
+                if (!enteredWord) {
+                    showAlert('Please enter the word!');
+                    return;
+                }
+                
+                if (enteredWord.toLowerCase() !== pending.word.toLowerCase()) {
+                    showAlert('Incorrect word! The elimination is denied.');
+                    delete game.pendingElimination;
+                    saveGame(state.gameCode, game);
+                    closeModal('eliminationModal');
+                    return;
+                }
+                
+                // Word is correct - process elimination
+                const assassin = game.players.find(p => p.name === pending.assassin);
+                const target = game.players.find(p => p.name === pending.target);
+                
+                if (!target || target.dead) {
+                    showAlert('Target already eliminated!');
+                    delete game.pendingElimination;
+                    saveGame(state.gameCode, game);
+                    closeModal('eliminationModal');
+                    return;
+                }
+                
+                target.dead = true;
+                assassin.target = target.target;
+                assassin.word = target.word;
+                game.kills = (game.kills || 0) + 1;
+                
+                const alive = game.players.filter(p => !p.dead);
+                if (alive.length === 1) {
+                    game.winner = alive[0].name;
+                }
+                
+                delete game.pendingElimination;
+                saveGame(state.gameCode, game);
+                closeModal('eliminationModal');
+                
+                if (alive.length === 1) {
+                    state.screen = 'winner';
+                    showWinner();
+                } else {
+                    state.screen = 'dead';
+                    showDead();
+                }
+            });
+        }
+
+        function denyElimination() {
+            getGame(state.gameCode, (game) => {
+                delete game.pendingElimination;
+                saveGame(state.gameCode, game);
+                closeModal('eliminationModal');
+            });
+        }
+
+        function startGame() {
+            getGame(state.gameCode, (game) => {
+                if (game.players.length < 3) {
+                    showAlert('Need at least 3 players!');
+                    return;
+                }
+                
+                const shuffled = shuffle([...game.players]);
+                const usedWords = new Set();
+                
+                shuffled.forEach((player, i) => {
+                    const nextPlayer = shuffled[(i + 1) % shuffled.length];
+                    player.target = nextPlayer.name;
+                    
+                    let word;
+                    do {
+                        word = words[Math.floor(Math.random() * words.length)];
+                    } while (usedWords.has(word));
+                    usedWords.add(word);
+                    
+                    player.word = word;
+                });
+                
+                game.players = shuffled;
+                game.started = true;
+                saveGame(state.gameCode, game);
+            });
+        }
+
+        function cancelGame() {
+            if (isFirebaseConfigured) {
+                database.ref('games/' + state.gameCode).remove();
+            }
+            playAgain();
+        }
+
+        function playAgain() {
+            if (state.gameCode) {
+                unwatchGame(state.gameCode);
+            }
+            localStorage.removeItem('myLastGame');
+            state = {
+                screen: 'home',
+                gameCode: '',
+                playerName: '',
+                myData: null,
+                isHost: false
+            };
+            showHome();
+        }
+
+        // ======================
+        // REAL-TIME SYNC
+        // ======================
+
+        function startWatching() {
+            if (!isFirebaseConfigured) return;
+            
+            watchGame(state.gameCode, (game) => {
+                if (!game) {
+                    showAlert('Game has been deleted!');
+                    playAgain();
+                    return;
+                }
+                
+                const me = game.players.find(p => p.name === state.playerName);
+                
+                // Check if there's a pending elimination for this player
+                if (game.pendingElimination && 
+                    game.pendingElimination.target === state.playerName && 
+                    !$('eliminationModal').classList.contains('active')) {
+                    $('confirmWord').value = '';
+                    openModal('eliminationModal');
+                }
+                
+                // Check if there's a winner
+                if (game.winner && state.screen !== 'winner') {
+                    state.screen = 'winner';
+                    showWinner();
+                } else if (game.started && me && !me.dead && state.screen !== 'playing' && !game.winner) {
+                    state.screen = 'playing';
+                    showPlaying(game);
+                } else if (me && me.dead && state.screen !== 'dead' && !game.winner) {
+                    state.screen = 'dead';
+                    showDead();
+                } else if (state.screen === 'lobby') {
+                    showLobby(game);
+                } else if (state.screen === 'playing' && !game.winner) {
+                    showPlaying(game);
+                } else if (state.screen === 'dead' && !game.winner) {
+                    showDead();
+                }
+            });
+        }
+
+        // Initialize
+        showHome();
+    </script>
+</body>
+</html>
