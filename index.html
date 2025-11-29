@@ -10,6 +10,9 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     
+    <!-- Fingerprint.js for Device ID -->
+    <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
+    
     <style>
         * {
             margin: 0;
@@ -113,6 +116,17 @@
             background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
             color: white;
         }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #ffa502 0%, #ff7979 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(255, 165, 2, 0.4);
+        }
+
+        .btn-warning:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 165, 2, 0.6);
+        }
         
         .btn:disabled {
             opacity: 0.5;
@@ -193,10 +207,22 @@
             margin-bottom: 8px;
             font-weight: 500;
             border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
         
         .player-item:last-child {
             margin-bottom: 0;
+        }
+
+        .player-points {
+            background: rgba(255, 99, 72, 0.2);
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 700;
+            color: #ff6348;
         }
         
         .mission-box {
@@ -248,21 +274,21 @@
         
         .stats {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
             margin-bottom: 24px;
         }
         
         .stat-box {
             background: rgba(255, 255, 255, 0.05);
-            padding: 24px;
+            padding: 20px;
             border-radius: 16px;
             text-align: center;
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
         
         .stat-value {
-            font-size: 2.5em;
+            font-size: 2em;
             font-weight: 800;
             color: #ff6348;
             line-height: 1;
@@ -272,7 +298,7 @@
         .stat-label {
             color: rgba(255, 255, 255, 0.6);
             margin-top: 8px;
-            font-size: 14px;
+            font-size: 12px;
             font-weight: 500;
         }
         
@@ -490,6 +516,64 @@
             font-size: 14px;
             color: rgba(255, 255, 255, 0.8);
         }
+
+        .reload-info {
+            background: rgba(255, 165, 2, 0.1);
+            border: 1px solid rgba(255, 165, 2, 0.3);
+            padding: 12px 16px;
+            border-radius: 10px;
+            margin-bottom: 16px;
+            text-align: center;
+            font-size: 13px;
+        }
+
+        .points-display {
+            background: rgba(255, 99, 72, 0.15);
+            padding: 10px 16px;
+            border-radius: 10px;
+            display: inline-block;
+            font-weight: 700;
+            font-size: 16px;
+            border: 1px solid rgba(255, 99, 72, 0.3);
+        }
+
+        .leaderboard {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .leaderboard-item {
+            background: rgba(255, 255, 255, 0.08);
+            padding: 16px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .leaderboard-rank {
+            font-size: 24px;
+            font-weight: 800;
+            color: #ff6348;
+            min-width: 40px;
+        }
+
+        .leaderboard-name {
+            flex: 1;
+            font-weight: 600;
+            font-size: 18px;
+        }
+
+        .leaderboard-points {
+            font-size: 20px;
+            font-weight: 700;
+            color: #ffd700;
+        }
     </style>
 </head>
 <body>
@@ -513,27 +597,8 @@
             </div>
             <label style="display: block; margin-bottom: 8px; font-size: 14px; font-weight: 600; opacity: 0.8;">Your Name</label>
             <input type="text" id="createName" placeholder="Enter your name" class="modal-input" style="text-align: center;">
-            <label style="display: block; margin-bottom: 8px; font-size: 14px; font-weight: 600; opacity: 0.8;">4-Digit PIN</label>
-            <input type="text" id="createPin" placeholder="Enter 4-digit PIN" maxlength="4" 
-                style="text-align: center; letter-spacing: 3px;" class="modal-input">
             <button class="btn btn-primary" onclick="confirmCreate()">Create Game</button>
             <button class="btn btn-secondary" onclick="closeModal('createModal')">Cancel</button>
-        </div>
-    </div>
-
-    <div id="rejoinModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-title">🔄 Rejoin Game</div>
-            <label style="display: block; margin-bottom: 8px; font-size: 14px; font-weight: 600; opacity: 0.8;">Game Code</label>
-            <input type="text" id="rejoinCode" placeholder="Enter game code" maxlength="4" 
-                style="text-align: center; letter-spacing: 3px;" class="modal-input">
-            <label style="display: block; margin-bottom: 8px; font-size: 14px; font-weight: 600; opacity: 0.8;">Your Name</label>
-            <input type="text" id="rejoinName" placeholder="Enter your name" class="modal-input" style="text-align: center;">
-            <label style="display: block; margin-bottom: 8px; font-size: 14px; font-weight: 600; opacity: 0.8;">4-Digit PIN</label>
-            <input type="text" id="rejoinPin" placeholder="Enter 4-digit PIN" maxlength="4" 
-                style="text-align: center; letter-spacing: 3px;" class="modal-input">
-            <button class="btn btn-primary" onclick="confirmRejoin()">Rejoin</button>
-            <button class="btn btn-secondary" onclick="closeModal('rejoinModal')">Cancel</button>
         </div>
     </div>
 
@@ -549,16 +614,11 @@
                     <circle cx="50" cy="50" r="8" fill="#ff4757"/>
                 </svg>
             </div>
-            <div class="modal-title">You've Been Targeted!</div>
-            <p style="margin-bottom: 24px; text-align: center; opacity: 0.8; line-height: 1.6;">
-                Someone claims you said their target word.<br>
-                If you remember saying it, type it below to confirm your elimination.
+            <div class="modal-title">Confirm Elimination</div>
+            <p id="eliminationMessage" style="margin-bottom: 24px; text-align: center; opacity: 0.8; line-height: 1.6; font-size: 16px;">
             </p>
-            <label style="display: block; margin-bottom: 8px; font-size: 14px; font-weight: 600; opacity: 0.8;">Type the word you said:</label>
-            <input type="text" id="confirmWord" placeholder="Enter the word..." 
-                style="text-align: center; font-size: 18px;" class="modal-input">
-            <button class="btn btn-danger" onclick="confirmElimination()">Confirm - I Said It</button>
-            <button class="btn btn-secondary" onclick="denyElimination()">Deny - I Didn't Say It</button>
+            <button class="btn btn-success" onclick="confirmElimination()">Yes - I Got Eliminated</button>
+            <button class="btn btn-secondary" onclick="denyElimination()">No - I Didn't Say It</button>
         </div>
     </div>
 
@@ -568,9 +628,8 @@
         // ======================
         
         // ⚠️ IMPORTANT: Replace this with YOUR Firebase config
-        // Get it from: Firebase Console > Project Settings > Your apps > Web app
         const firebaseConfig = {
-               apiKey: "AIzaSyAODpo5-Bg40oYE9RNkfrlNan03U_CAWok",
+            apiKey: "AIzaSyAODpo5-Bg40oYE9RNkfrlNan03U_CAWok",
     authDomain: "assassin-game-b4f4e.firebaseapp.com",
     databaseURL: "https://assassin-game-b4f4e-default-rtdb.firebaseio.com",
     projectId: "assassin-game-b4f4e",
@@ -594,6 +653,36 @@
             }
         } catch (error) {
             console.error("Firebase initialization error:", error);
+        }
+
+        // ======================
+        // DEVICE ID GENERATION
+        // ======================
+        
+        let deviceId = null;
+
+        async function getDeviceId() {
+            if (deviceId) return deviceId;
+            
+            // Try to get from localStorage first
+            const stored = localStorage.getItem('assassin_device_id');
+            if (stored) {
+                deviceId = stored;
+                return deviceId;
+            }
+            
+            // Generate new device ID
+            try {
+                const fp = await FingerprintJS.load();
+                const result = await fp.get();
+                deviceId = result.visitorId;
+            } catch (error) {
+                // Fallback to random ID
+                deviceId = 'device_' + Math.random().toString(36).substr(2, 9) + Date.now();
+            }
+            
+            localStorage.setItem('assassin_device_id', deviceId);
+            return deviceId;
         }
 
         // ======================
@@ -788,29 +877,29 @@
                     </svg>
                 </div>
                 <h1>Assassin</h1>
-                <p class="subtitle">The Game Where Words Can Kill</p>
+                <p class="subtitle">The Game Where Words Kill</p>
                 
                 <button class="btn btn-primary" onclick="openModal('createModal')">Create New Game</button>
-                <button class="btn btn-secondary" onclick="openModal('rejoinModal')">Rejoin Game</button>
                 
                 <div class="divider">OR</div>
                 
                 <input type="text" id="joinCode" placeholder="Game Code" maxlength="4" 
                     style="text-align: center; letter-spacing: 3px;">
                 <input type="text" id="joinName" placeholder="Your Name" style="text-align: center;">
-                <input type="text" id="joinPin" placeholder="4-Digit PIN" maxlength="4" 
-                    style="text-align: center; letter-spacing: 3px;">
                 <button class="btn btn-success" onclick="joinGame()">Join Game</button>
                 
                 <div class="tip">
-                    <strong>How to play:</strong> Get your target to say your secret word. Last player standing wins!
+                    <strong>How to play:</strong> Get your target to say your secret word. Earn 5 points per elimination. Use Reload to change your word (max 2 times, reduces points). Last player standing + highest points wins!
                 </div>
             `;
         }
 
         function showLobby(game) {
             const playerList = game.players.map(p => 
-                `<div class="player-item">${p.name}</div>`
+                `<div class="player-item">
+                    <span>${p.name}</span>
+                    <span class="player-points">${p.points || 0} pts</span>
+                </div>`
             ).join('');
 
             $('app').innerHTML = `
@@ -828,8 +917,8 @@
                 
                 ${state.isHost ? `
                     <button class="btn btn-success" onclick="startGame()" 
-                        ${game.players.length < 3 ? 'disabled' : ''}>
-                        Start Game ${game.players.length < 3 ? '(Need 3+ players)' : ''}
+                        ${game.players.length < 2 ? 'disabled' : ''}>
+                        Start Game ${game.players.length < 2 ? '(Need 2+ players)' : ''}
                     </button>
                     <button class="btn btn-secondary" onclick="cancelGame()">Cancel</button>
                 ` : `
@@ -843,6 +932,8 @@
         function showPlaying(game) {
             const me = game.players.find(p => p.name === state.playerName);
             const alive = game.players.filter(p => !p.dead).length;
+            const pointValue = me.reloads === 0 ? 5 : (me.reloads === 1 ? 4 : 3);
+            const reloadsLeft = 2 - (me.reloads || 0);
 
             $('app').innerHTML = `
                 <h1>${state.playerName}</h1>
@@ -852,7 +943,18 @@
                         <span class="status-dot"></span>
                         ACTIVE
                     </span>
+                    <span class="points-display" style="margin-left: 10px;">${me.points || 0} Points</span>
                 </div>
+                
+                ${reloadsLeft > 0 ? `
+                    <div class="reload-info">
+                        🔄 <strong>${reloadsLeft} Reload${reloadsLeft > 1 ? 's' : ''} Left</strong> • Next kill worth: ${pointValue} points
+                    </div>
+                ` : `
+                    <div class="reload-info" style="background: rgba(235, 51, 73, 0.1); border-color: rgba(235, 51, 73, 0.3);">
+                        ❌ <strong>No Reloads Left</strong> • Next kill worth: ${pointValue} points
+                    </div>
+                `}
                 
                 <div class="mission-box">
                     <div class="mission-title">YOUR MISSION</div>
@@ -870,14 +972,24 @@
                     ✓ They Said It!
                 </button>
                 
+                ${reloadsLeft > 0 ? `
+                    <button class="btn btn-warning" onclick="reloadWord()">
+                        🔄 Reload Word (${reloadsLeft} left)
+                    </button>
+                ` : ''}
+                
                 <div class="stats">
                     <div class="stat-box">
                         <div class="stat-value">${alive}</div>
                         <div class="stat-label">Players Left</div>
                     </div>
                     <div class="stat-box">
+                        <div class="stat-value">${me.points || 0}</div>
+                        <div class="stat-label">Your Points</div>
+                    </div>
+                    <div class="stat-box">
                         <div class="stat-value">${game.kills || 0}</div>
-                        <div class="stat-label">Eliminations</div>
+                        <div class="stat-label">Total Kills</div>
                     </div>
                 </div>
                 
@@ -895,7 +1007,7 @@
                 
                 const playerList = alivePlayers.map(p => `
                     <div class="player-detail">
-                        <div class="player-name">${p.name}</div>
+                        <div class="player-name">${p.name} - ${p.points || 0} pts</div>
                         <div class="player-info-grid">
                             <div class="info-item">
                                 <div class="info-label">Target</div>
@@ -940,8 +1052,19 @@
             getGame(state.gameCode, (game) => {
                 if (!game) return;
                 
-                const winnerName = game.winner || state.playerName;
-                const isMe = winnerName === state.playerName;
+                const lastStanding = game.winner || state.playerName;
+                const sortedByPoints = [...game.players].sort((a, b) => (b.points || 0) - (a.points || 0));
+                const highestPoints = sortedByPoints[0];
+                const isLastStanding = lastStanding === state.playerName;
+                const isHighestPoints = highestPoints.name === state.playerName;
+                
+                const leaderboard = sortedByPoints.slice(0, 5).map((p, i) => `
+                    <div class="leaderboard-item">
+                        <div class="leaderboard-rank">#${i + 1}</div>
+                        <div class="leaderboard-name">${p.name}${p.name === lastStanding ? ' 👑' : ''}</div>
+                        <div class="leaderboard-points">${p.points || 0} pts</div>
+                    </div>
+                `).join('');
                 
                 const crosshairSVG = `
                     <svg style="width: 80px; height: 80px; display: block; margin: 0 auto;" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
@@ -955,35 +1078,36 @@
                 `;
                 
                 $('app').innerHTML = `
-                    <div class="icon">${isMe ? '👑' : ''}</div>
-                    ${!isMe ? crosshairSVG : ''}
-                    <h1>${isMe ? 'VICTORY!' : 'GAME OVER'}</h1>
-                    <p class="subtitle">${isMe ? 'You are the champion!' : 'Winner Announced'}</p>
+                    <div class="icon">${isLastStanding || isHighestPoints ? '👑' : ''}</div>
+                    ${!isLastStanding && !isHighestPoints ? crosshairSVG : ''}
+                    <h1>GAME OVER</h1>
+                    <p class="subtitle">${isLastStanding || isHighestPoints ? 'You are a champion!' : 'Winners announced'}</p>
                     
-                    <div class="winner-screen" style="padding: 40px; border-radius: 20px; margin: 24px 0; text-align: center;">
-                        <div style="font-size: 4em; margin-bottom: 16px;">${isMe ? '🏆' : ''}</div>
-                        ${!isMe ? crosshairSVG : ''}
-                        <div style="font-size: 28px; font-weight: 800; color: #ff4757; margin-bottom: 8px; margin-top: ${!isMe ? '16px' : '0'};">
-                            ${winnerName}
+                    <div class="winner-screen" style="padding: 30px; border-radius: 20px; margin: 24px 0; text-align: center;">
+                        <div style="margin-bottom: 20px;">
+                            <div style="font-size: 14px; opacity: 0.7; margin-bottom: 8px;">🏆 Last Standing</div>
+                            <div style="font-size: 28px; font-weight: 800; color: #ff4757;">
+                                ${lastStanding}
+                            </div>
                         </div>
-                        <div style="font-size: 18px; font-weight: 600; opacity: 0.8;">
-                            ${isMe ? 'Last Assassin Standing' : 'Won the Game!'}
+                        <div style="border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 20px;">
+                            <div style="font-size: 14px; opacity: 0.7; margin-bottom: 8px;">🎯 Highest Points</div>
+                            <div style="font-size: 28px; font-weight: 800; color: #ffd700;">
+                                ${highestPoints.name}
+                            </div>
+                            <div style="font-size: 18px; margin-top: 8px; opacity: 0.8;">
+                                ${highestPoints.points || 0} points
+                            </div>
                         </div>
                     </div>
                     
-                    <div class="stats">
-                        <div class="stat-box">
-                            <div class="stat-value">${game.players.length}</div>
-                            <div class="stat-label">Total Players</div>
-                        </div>
-                        <div class="stat-box">
-                            <div class="stat-value">${game.kills || 0}</div>
-                            <div class="stat-label">Eliminations</div>
-                        </div>
+                    <div class="leaderboard">
+                        <div style="font-weight: 700; font-size: 18px; margin-bottom: 16px; text-align: center;">Final Leaderboard</div>
+                        ${leaderboard}
                     </div>
                     
                     <button class="btn btn-primary" onclick="playAgain()">
-                        ${isMe ? 'Play Again' : 'Back to Home'}
+                        ${isLastStanding || isHighestPoints ? 'Play Again' : 'Back to Home'}
                     </button>
                 `;
             });
@@ -993,30 +1117,27 @@
         // ACTIONS
         // ======================
         
-        function confirmCreate() {
+        async function confirmCreate() {
             const name = $('createName').value.trim();
-            const pin = $('createPin').value.trim();
             
             if (!name) {
                 showAlert('Please enter your name!');
                 return;
             }
             
-            if (!pin || pin.length !== 4 || !/^\d+$/.test(pin)) {
-                showAlert('PIN must be exactly 4 digits!');
-                return;
-            }
-            
+            const devId = await getDeviceId();
             const code = randomCode();
             const game = {
                 code: code,
                 host: name,
                 players: [{
                     name: name,
-                    pin: pin,
+                    deviceId: devId,
                     target: null,
                     word: null,
-                    dead: false
+                    dead: false,
+                    points: 0,
+                    reloads: 0
                 }],
                 started: false,
                 kills: 0
@@ -1031,7 +1152,7 @@
             localStorage.setItem('myLastGame', JSON.stringify({
                 code: code,
                 name: name,
-                pin: pin,
+                deviceId: devId,
                 isHost: true
             }));
             
@@ -1040,20 +1161,16 @@
             startWatching();
         }
 
-        function joinGame() {
+        async function joinGame() {
             const code = $('joinCode').value.trim();
             const name = $('joinName').value.trim();
-            const pin = $('joinPin').value.trim();
             
-            if (!code || !name || !pin) {
+            if (!code || !name) {
                 showAlert('Please fill in all fields!');
                 return;
             }
             
-            if (pin.length !== 4 || !/^\d+$/.test(pin)) {
-                showAlert('PIN must be exactly 4 digits!');
-                return;
-            }
+            const devId = await getDeviceId();
             
             getGame(code, (game) => {
                 if (!game) {
@@ -1061,22 +1178,17 @@
                     return;
                 }
                 
-                const existingPlayer = game.players.find(p => p.name === name);
+                const existingPlayer = game.players.find(p => p.deviceId === devId);
                 if (existingPlayer) {
-                    if (existingPlayer.pin !== pin) {
-                        showAlert('Incorrect PIN!');
-                        return;
-                    }
-                    
-                    // Rejoin
+                    // Rejoin with device ID
                     state.gameCode = code;
-                    state.playerName = name;
-                    state.isHost = (game.host === name);
+                    state.playerName = existingPlayer.name;
+                    state.isHost = (game.host === existingPlayer.name);
                     
                     localStorage.setItem('myLastGame', JSON.stringify({
                         code: code,
-                        name: name,
-                        pin: pin,
+                        name: existingPlayer.name,
+                        deviceId: devId,
                         isHost: state.isHost
                     }));
                     
@@ -1106,12 +1218,19 @@
                     return;
                 }
                 
+                if (game.players.find(p => p.name === name)) {
+                    showAlert('Name already taken!');
+                    return;
+                }
+                
                 game.players.push({
                     name: name,
-                    pin: pin,
+                    deviceId: devId,
                     target: null,
                     word: null,
-                    dead: false
+                    dead: false,
+                    points: 0,
+                    reloads: 0
                 });
                 saveGame(code, game);
                 
@@ -1122,77 +1241,11 @@
                 localStorage.setItem('myLastGame', JSON.stringify({
                     code: code,
                     name: name,
-                    pin: pin,
+                    deviceId: devId,
                     isHost: false
                 }));
                 
                 showLobby(game);
-                startWatching();
-            });
-        }
-
-        function confirmRejoin() {
-            const code = $('rejoinCode').value.trim();
-            const name = $('rejoinName').value.trim();
-            const pin = $('rejoinPin').value.trim();
-            
-            if (!code || !name || !pin) {
-                showAlert('Please fill in all fields!');
-                return;
-            }
-            
-            if (pin.length !== 4 || !/^\d+$/.test(pin)) {
-                showAlert('PIN must be exactly 4 digits!');
-                return;
-            }
-            
-            getGame(code, (game) => {
-                if (!game) {
-                    showAlert('Game not found!');
-                    return;
-                }
-                
-                const me = game.players.find(p => p.name === name);
-                if (!me) {
-                    showAlert('Player not found in this game!');
-                    return;
-                }
-                
-                if (me.pin !== pin) {
-                    showAlert('Incorrect PIN!');
-                    return;
-                }
-                
-                state.gameCode = code;
-                state.playerName = name;
-                state.isHost = (game.host === name);
-                
-                localStorage.setItem('myLastGame', JSON.stringify({
-                    code: code,
-                    name: name,
-                    pin: pin,
-                    isHost: state.isHost
-                }));
-                
-                closeModal('rejoinModal');
-                
-                if (!game.started) {
-                    state.screen = 'lobby';
-                    showLobby(game);
-                } else if (me.dead) {
-                    state.screen = 'dead';
-                    showDead();
-                } else {
-                    const alive = game.players.filter(p => !p.dead);
-                    if (alive.length === 1 && !me.dead) {
-                        state.screen = 'winner';
-                        showWinner();
-                    } else {
-                        state.screen = 'playing';
-                        showPlaying(game);
-                    }
-                }
-                
                 startWatching();
             });
         }
@@ -1207,15 +1260,15 @@
                     return;
                 }
                 
-                // Create pending elimination for target to confirm
+                // Create pending elimination
                 game.pendingElimination = {
                     assassin: state.playerName,
                     target: me.target,
-                    word: me.word
+                    word: me.word,
+                    points: me.reloads === 0 ? 5 : (me.reloads === 1 ? 4 : 3)
                 };
                 saveGame(state.gameCode, game);
                 
-                // Show styled notification
                 const notification = document.createElement('div');
                 notification.style.cssText = `
                     position: fixed;
@@ -1235,7 +1288,7 @@
                     max-width: 90%;
                 `;
                 notification.innerHTML = `
-                    <div style="font-size: 16px; font-weight: 600; margin-bottom: 4px;">🎯 Elimination Request Sent</div>
+                    <div style="font-size: 16px; font-weight: 600; margin-bottom: 4px;">🎯 Elimination Sent</div>
                     <div style="font-size: 14px; opacity: 0.8;">Waiting for ${me.target} to confirm...</div>
                 `;
                 document.body.appendChild(notification);
@@ -1249,23 +1302,7 @@
 
         function confirmElimination() {
             getGame(state.gameCode, (game) => {
-                const enteredWord = $('confirmWord').value.trim();
                 const pending = game.pendingElimination;
-                
-                if (!enteredWord) {
-                    showAlert('Please enter the word!');
-                    return;
-                }
-                
-                if (enteredWord.toLowerCase() !== pending.word.toLowerCase()) {
-                    showAlert('Incorrect word! The elimination is denied.');
-                    delete game.pendingElimination;
-                    saveGame(state.gameCode, game);
-                    closeModal('eliminationModal');
-                    return;
-                }
-                
-                // Word is correct - process elimination
                 const assassin = game.players.find(p => p.name === pending.assassin);
                 const target = game.players.find(p => p.name === pending.target);
                 
@@ -1277,9 +1314,11 @@
                     return;
                 }
                 
+                // Process elimination
                 target.dead = true;
                 assassin.target = target.target;
                 assassin.word = target.word;
+                assassin.points = (assassin.points || 0) + pending.points;
                 game.kills = (game.kills || 0) + 1;
                 
                 const alive = game.players.filter(p => !p.dead);
@@ -1309,10 +1348,35 @@
             });
         }
 
+        function reloadWord() {
+            getGame(state.gameCode, (game) => {
+                const me = game.players.find(p => p.name === state.playerName);
+                
+                if ((me.reloads || 0) >= 2) {
+                    showAlert('You have used all your reloads!');
+                    return;
+                }
+                
+                // Get new word (different from current)
+                let newWord;
+                do {
+                    newWord = words[Math.floor(Math.random() * words.length)];
+                } while (newWord === me.word);
+                
+                me.word = newWord;
+                me.reloads = (me.reloads || 0) + 1;
+                
+                saveGame(state.gameCode, game);
+                showPlaying(game);
+                
+                showAlert(`Word reloaded! New word: ${newWord}\n\nReloads left: ${2 - me.reloads}\nNext kill worth: ${me.reloads === 1 ? 4 : 3} points`);
+            });
+        }
+
         function startGame() {
             getGame(state.gameCode, (game) => {
-                if (game.players.length < 3) {
-                    showAlert('Need at least 3 players!');
+                if (game.players.length < 2) {
+                    showAlert('Need at least 2 players!');
                     return;
                 }
                 
@@ -1330,6 +1394,8 @@
                     usedWords.add(word);
                     
                     player.word = word;
+                    player.points = 0;
+                    player.reloads = 0;
                 });
                 
                 game.players = shuffled;
@@ -1380,7 +1446,7 @@
                 if (game.pendingElimination && 
                     game.pendingElimination.target === state.playerName && 
                     !$('eliminationModal').classList.contains('active')) {
-                    $('confirmWord').value = '';
+                    $('eliminationMessage').textContent = `${game.pendingElimination.assassin} claims you said their target word. Did you say it?`;
                     openModal('eliminationModal');
                 }
                 
@@ -1409,3 +1475,4 @@
     </script>
 </body>
 </html>
+
