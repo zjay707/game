@@ -54,31 +54,6 @@
             z-index: 0;
         }
         
-        .container {
-            background: linear-gradient(135deg, rgba(26, 26, 26, 0.95) 0%, rgba(20, 20, 30, 0.95) 100%);
-            backdrop-filter: blur(20px);
-            border-radius: 32px;
-            padding: 48px 40px;
-            max-width: 480px;
-            width: 100%;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 
-                        0 0 1px rgba(255, 255, 255, 0.1) inset,
-                        0 8px 16px rgba(255, 71, 87, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            position: relative;
-            z-index: 1;
-        }
-
-        .container::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(255, 99, 72, 0.3), transparent);
-        }
-        
         h1 {
             text-align: center;
             color: #fff;
@@ -488,13 +463,15 @@
         .status-badge {
             display: inline-flex;
             align-items: center;
+            justify-content: center;
             gap: 8px;
             background: rgba(34, 197, 94, 0.2);
-            padding: 8px 16px;
+            padding: 10px 20px;
             border-radius: 20px;
             font-weight: 600;
             font-size: 14px;
             border: 1px solid rgba(34, 197, 94, 0.3);
+            min-width: 120px;
         }
         
         .status-dot {
@@ -503,6 +480,18 @@
             background: #22c55e;
             border-radius: 50%;
             animation: pulse 2s infinite;
+        }
+
+        .points-display {
+            background: rgba(255, 99, 72, 0.15);
+            padding: 10px 20px;
+            border-radius: 10px;
+            display: inline-block;
+            font-weight: 700;
+            font-size: 16px;
+            border: 1px solid rgba(255, 99, 72, 0.3);
+            min-width: 120px;
+            text-align: center;
         }
         
         @keyframes pulse {
@@ -637,14 +626,43 @@
             left: 50%;
             transform: translateX(-50%);
             background: rgba(255, 99, 72, 0.15);
-            padding: 8px 16px;
-            border-radius: 8px;
+            padding: 10px 20px;
+            border-radius: 10px;
             font-weight: 600;
             letter-spacing: 2px;
             border: 1px solid rgba(255, 99, 72, 0.3);
             font-size: 12px;
             z-index: 100;
-            opacity: 0.7;
+            opacity: 0.8;
+            white-space: nowrap;
+            max-width: 90%;
+            text-align: center;
+        }
+
+        /* Add padding to container bottom so content doesn't overlap with fixed game code */
+        .container {
+            background: linear-gradient(135deg, rgba(26, 26, 26, 0.95) 0%, rgba(20, 20, 30, 0.95) 100%);
+            backdrop-filter: blur(20px);
+            border-radius: 32px;
+            padding: 48px 40px 70px 40px;
+            max-width: 480px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 
+                        0 0 1px rgba(255, 255, 255, 0.1) inset,
+                        0 8px 16px rgba(255, 71, 87, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            position: relative;
+            z-index: 1;
+        }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 99, 72, 0.3), transparent);
         }
 
         .code-display {
@@ -781,7 +799,7 @@
         
         // ⚠️ IMPORTANT: Replace this with YOUR Firebase config
         const firebaseConfig = {
-           apiKey: "AIzaSyAODpo5-Bg40oYE9RNkfrlNan03U_CAWok",
+         apiKey: "AIzaSyAODpo5-Bg40oYE9RNkfrlNan03U_CAWok",
     authDomain: "assassin-game-b4f4e.firebaseapp.com",
     databaseURL: "https://assassin-game-b4f4e-default-rtdb.firebaseio.com",
     projectId: "assassin-game-b4f4e",
@@ -1089,12 +1107,12 @@
 
             $('app').innerHTML = `
                 <h1>${state.playerName}</h1>
-                <div style="text-align: center; margin: 16px 0;">
+                <div style="display: flex; flex-direction: column; gap: 10px; align-items: center; margin: 16px 0 24px 0;">
                     <span class="status-badge">
                         <span class="status-dot"></span>
                         ACTIVE
                     </span>
-                    <span class="points-display" style="margin-left: 10px;">${me.points || 0} Points</span>
+                    <span class="points-display">${me.points || 0} Points</span>
                 </div>
                 
                 ${reloadsLeft > 0 ? `
