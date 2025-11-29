@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Assassin - Social Deduction Game</title>
+    <title>Assassin - The Game Where Words Kill</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <!-- Firebase SDK -->
@@ -360,7 +360,7 @@
         }
         
         .word {
-            font-size: clamp(1.5em, 4vw, 2.8em);
+            font-size: 2.8em;
             font-weight: 800;
             text-align: center;
             color: #ff4757;
@@ -368,9 +368,23 @@
             word-wrap: normal;
             overflow-wrap: normal;
             white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            padding: 0 10px;
+            padding: 0;
+            line-height: 1.2;
+            display: inline-block;
+            max-width: 100%;
+        }
+
+        /* Responsive word sizing */
+        @media (max-width: 400px) {
+            .word {
+                font-size: 2.2em;
+            }
+        }
+
+        @media (max-width: 350px) {
+            .word {
+                font-size: 1.8em;
+            }
         }
         
         .stats {
@@ -726,32 +740,40 @@
 
         .leaderboard-item {
             background: rgba(255, 255, 255, 0.08);
-            padding: 16px;
+            padding: 16px 12px;
             border-radius: 10px;
             margin-bottom: 10px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             border: 1px solid rgba(255, 255, 255, 0.1);
+            gap: 12px;
         }
 
         .leaderboard-rank {
-            font-size: 24px;
+            font-size: clamp(18px, 5vw, 24px);
             font-weight: 800;
             color: #ff6348;
-            min-width: 40px;
+            min-width: 35px;
+            flex-shrink: 0;
         }
 
         .leaderboard-name {
             flex: 1;
             font-weight: 600;
-            font-size: 18px;
+            font-size: clamp(14px, 4vw, 18px);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            min-width: 0;
         }
 
         .leaderboard-points {
-            font-size: 20px;
+            font-size: clamp(16px, 4.5vw, 20px);
             font-weight: 700;
             color: #ffd700;
+            white-space: nowrap;
+            flex-shrink: 0;
         }
     </style>
 </head>
@@ -808,7 +830,7 @@
         
         // ⚠️ IMPORTANT: Replace this with YOUR Firebase config
         const firebaseConfig = {
-      apiKey: "AIzaSyAODpo5-Bg40oYE9RNkfrlNan03U_CAWok",
+   apiKey: "AIzaSyAODpo5-Bg40oYE9RNkfrlNan03U_CAWok",
     authDomain: "assassin-game-b4f4e.firebaseapp.com",
     databaseURL: "https://assassin-game-b4f4e-default-rtdb.firebaseio.com",
     projectId: "assassin-game-b4f4e",
@@ -1142,7 +1164,7 @@
                     </div>
                     <div class="mission-card" style="margin-bottom: 0;">
                         <div class="mission-label">Get them to say</div>
-                        <div class="word">${me.word}</div>
+                        <div class="word" id="targetWord">${me.word}</div>
                     </div>
                 </div>
                 
@@ -1177,6 +1199,29 @@
 
                 <div class="code-display-bottom">Game Code: ${state.gameCode}</div>
             `;
+
+            // Scale word if too long
+            scaleWordIfNeeded();
+        }
+
+        function scaleWordIfNeeded() {
+            const wordElement = document.getElementById('targetWord');
+            if (!wordElement) return;
+
+            const word = wordElement.textContent;
+            const container = wordElement.parentElement;
+            
+            // Reset any previous scaling
+            wordElement.style.transform = 'scale(1)';
+            
+            // Check if word overflows
+            setTimeout(() => {
+                if (wordElement.scrollWidth > container.clientWidth) {
+                    const ratio = container.clientWidth / wordElement.scrollWidth;
+                    const scale = Math.max(0.4, ratio * 0.95); // Min 40% scale, with 5% padding
+                    wordElement.style.transform = `scale(${scale})`;
+                }
+            }, 10);
         }
 
         function showDead() {
@@ -1656,5 +1701,6 @@
     </script>
 </body>
 </html>
+
 
 
