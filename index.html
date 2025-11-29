@@ -830,7 +830,7 @@
         
         // ⚠️ IMPORTANT: Replace this with YOUR Firebase config
         const firebaseConfig = {
- apiKey: "AIzaSyAODpo5-Bg40oYE9RNkfrlNan03U_CAWok",
+       apiKey: "AIzaSyAODpo5-Bg40oYE9RNkfrlNan03U_CAWok",
     authDomain: "assassin-game-b4f4e.firebaseapp.com",
     databaseURL: "https://assassin-game-b4f4e-default-rtdb.firebaseio.com",
     projectId: "assassin-game-b4f4e",
@@ -1164,7 +1164,9 @@
                     </div>
                     <div class="mission-card" style="margin-bottom: 0;">
                         <div class="mission-label">Get them to say</div>
-                        <div class="word" id="targetWord">${me.word}</div>
+                        <div style="display: flex; justify-content: center; align-items: center; min-height: 60px;">
+                            <div class="word" id="targetWord">${me.word}</div>
+                        </div>
                     </div>
                 </div>
                 
@@ -1708,7 +1710,3 @@
     </script>
 </body>
 </html>
-
-
-
-
