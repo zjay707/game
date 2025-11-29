@@ -4,6 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Assassin - The Game Where Words Kill</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="description" content="The social deduction game where words can kill. Get your target to say your secret word!">
+    <meta name="theme-color" content="#ff4757">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Assassin">
+    
+    <!-- Manifest -->
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- Icons -->
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <!-- Firebase SDK -->
@@ -830,7 +846,7 @@
         
         // ⚠️ IMPORTANT: Replace this with YOUR Firebase config
         const firebaseConfig = {
-       apiKey: "AIzaSyAODpo5-Bg40oYE9RNkfrlNan03U_CAWok",
+            apiKey: "AIzaSyAODpo5-Bg40oYE9RNkfrlNan03U_CAWok",
     authDomain: "assassin-game-b4f4e.firebaseapp.com",
     databaseURL: "https://assassin-game-b4f4e-default-rtdb.firebaseio.com",
     projectId: "assassin-game-b4f4e",
@@ -1707,6 +1723,28 @@
 
         // Initialize
         showHome();
+
+        // Register Service Worker for PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('service-worker.js')
+                    .then(registration => {
+                        console.log('✅ Service Worker registered:', registration);
+                    })
+                    .catch(error => {
+                        console.log('❌ Service Worker registration failed:', error);
+                    });
+            });
+        }
+
+        // PWA Install Prompt
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            console.log('💾 PWA install prompt available');
+        });
     </script>
 </body>
 </html>
+
